@@ -5,52 +5,61 @@
 .PHONY: tests
 .PHONY: build
 
+#
 
-PYTHON = 3.12
-VENV := .venv
-# PYTHONENV := ${VENV}/Scripts/python.exe
-PYTHONENV := ${VENV}/bin/python
-# LIBRARIES_DIR := path/to/libraries/directory
+PYTHON-SYS:= python3.12
 
+VENV:= .venv
+# OUTDIR:= --outdir /path
+
+BIN-DIR:= $(VENV)/bin
+PIP-COMPILE:= $(BIN-DIR)/pip-compile
+PYTHON:= $(BIN-DIR)/python
+
+
+#
 
 all: requirements
 
 #
 
-requirements.txt: pyproject.toml ${VENV}
-	${PYTHONENV} -m piptools compile -o requirements.txt pyproject.toml
+requirements.txt: pyproject.toml $(PIP-COMPILE)
+	$(PYTHON) -m piptools compile -o requirements.txt pyproject.toml
 
 sync: requirements
-	${PYTHONENV} -m piptools sync requirements.txt
+	$(PYTHON) -m piptools sync requirements.txt
 
 
-requirements-dev.txt: pyproject.toml ${VENV}
-	${PYTHONENV} -m piptools compile --extra dev -o requirements-dev.txt pyproject.toml
+requirements-dev.txt: pyproject.toml $(PIP-COMPILE)
+	$(PYTHON) -m piptools compile --extra dev -o requirements-dev.txt pyproject.toml
 
 dev: requirements
-	${PYTHONENV} -m piptools sync requirements-dev.txt
-	${PYTHONENV} -m pip install -r requirements-dev.txt -e .[dev]
+	$(PYTHON) -m piptools sync requirements-dev.txt
+	$(PYTHON) -m pip install -e .[dev]
 
 
-requirements-tests.txt: pyproject.toml ${VENV}
-	${PYTHONENV} -m piptools compile --extra tests -o requirements-tests.txt pyproject.toml
+requirements-tests.txt: pyproject.toml $(PIP-COMPILE)
+	$(PYTHON) -m piptools compile --extra tests -o requirements-tests.txt pyproject.toml
 
 tests: requirements
-	# ${PYTHONENV} -m piptools sync requirements-tests.txt
-	${PYTHONENV} -m pip install -r requirements-tests.txt -e .[tests]
+	$(PYTHON) -m piptools sync requirements-tests.txt
+	$(PYTHON) -m pip install -e .[tests]
 
 
 requirements: requirements.txt requirements-tests.txt requirements-dev.txt 
 
 
-${VENV}:
-	python${PYTHON} -m venv ${VENV}
-	${PYTHONENV} -m pip install --upgrade pip pip-tools
+$(PIP-COMPILE):
+	$(PYTHON-SYS) -m venv $(VENV)
+	$(PYTHON) -m pip install --upgrade pip pip-tools
 
 #
 
-build:
-	${PYTHONENV} -m build #--outdir ${LIBRARIES_DIR}windows_whoami
+build: sync
+	$(PYTHON) -m build $(OUTDIR)
+	@echo
+	@echo run make dev to continue development
+	@echo
 
 
 

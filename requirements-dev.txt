@@ -6,14 +6,18 @@
 #
 asttokens==2.4.1
     # via stack-data
+click==8.1.7
+    # via cards (pyproject.toml)
 decorator==5.1.1
     # via ipython
 executing==2.0.1
     # via stack-data
+greenlet==3.0.3
+    # via sqlalchemy
 iniconfig==2.0.0
     # via pytest
 ipython==8.24.0
-    # via mycards (pyproject.toml)
+    # via cards (pyproject.toml)
 jedi==0.19.1
     # via ipython
 markdown-it-py==3.0.0
@@ -41,16 +45,20 @@ pygments==2.18.0
     #   ipython
     #   rich
 pytest==8.2.0
-    # via mycards (pyproject.toml)
+    # via cards (pyproject.toml)
 rich==13.7.1
-    # via mycards (pyproject.toml)
+    # via cards (pyproject.toml)
 six==1.16.0
     # via asttokens
+sqlalchemy==2.0.30
+    # via cards (pyproject.toml)
 stack-data==0.6.3
     # via ipython
 traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
+typing-extensions==4.12.2
+    # via sqlalchemy
 wcwidth==0.2.13
     # via prompt-toolkit

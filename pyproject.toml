@@ -7,6 +7,8 @@ name = "cards"
 description = "project description"
 version = "0.1.0"
 dependencies = [
+    "click",
+    "sqlalchemy",
     "rich",
 ]
 
@@ -30,10 +32,10 @@ dev = [
 ]
 
 [project.scripts]
-cards = "cards:main"
+cards = "cards:cli.cli"
 
 [project.gui-scripts]
-cards_basew = "cards:main"
+cards_basew = "cards:__main__.main"
 
 
 [tool.setuptools]
