@@ -16,10 +16,6 @@ from . import (
 
 
 
-option_id = click.option("-i", "--id", "card_id", required=True, type=int)
-option_owner = click.option("-o", "--owner")
-
-
 
 def _get_card_param(ctx: click.Context, option: str) -> click.Parameter:
     params = ctx.command.get_params(ctx)
@@ -31,8 +27,8 @@ def _get_card_param(ctx: click.Context, option: str) -> click.Parameter:
 
 
 def _invalid_card_id(ctx: click.Context, card_id: int, err: api.InvalidCardIdError) -> None:
-        param = _get_card_param(ctx, option="card_id")
-        raise click.BadParameter(message=str(card_id),param=param) from err
+    param = _get_card_param(ctx, option="card_id")
+    raise click.BadParameter(message=str(card_id),param=param) from err
 
 
 
@@ -46,15 +42,15 @@ def cli(ctx: click.Context) -> None:
 
 
 @cli.command()
-@click.argument("summary", nargs=-1)
-@option_owner
-def add (summary: tuple[str], owner: str | None) -> None:
+@click.argument("summary", type=str)
+@click.option("-o", "--owner", type=str)
+def add (summary: str, owner: str | None) -> None:
     """Add a card to DB."""
-    api.add_card(summary=" ".join(summary), owner=owner)
+    api.add_card(summary=summary, owner=owner)
 
 
 @cli.command()
-@option_id
+@click.argument("card_id", metavar="ID", type=int)
 @click.pass_context
 def delete(ctx: click.Context, card_id: int) -> None:
     """Delete card by id."""
@@ -65,7 +61,7 @@ def delete(ctx: click.Context, card_id: int) -> None:
 
 
 @cli.command(name="list")
-@option_owner
+@click.option("-o", "--owner", type=str)
 @click.option(
     "-s",
     "--state",
@@ -86,15 +82,14 @@ def list_cards(owner: str | None, states: tuple[api.State, ...]) -> None:
 
 
 @cli.command()
-@option_id
-@option_owner
-@click.argument("summary", nargs=-1)
+@click.argument("card_id", metavar="ID", type=int)
+@click.option("-o", "--owner", type=str)
+@click.option("-s", "--summary", type=str)
 @click.pass_context
-def update(ctx: click.Context, card_id: int, owner: str | None, summary: tuple[str]) -> None:
+def update(ctx: click.Context, card_id: int, owner: str | None, summary: str) -> None:
     """Update card."""
-    summary_txt = " ".join(summary)
     try:
-        api.update_card(card_id=card_id, owner=owner, summary=summary_txt)
+        api.update_card(card_id=card_id, owner=owner, summary=summary)
     except api.InvalidCardIdError as err:
         _invalid_card_id(ctx=ctx, card_id=card_id, err=err)
     except sqlalchemy.exc.OperationalError as err:
@@ -104,7 +99,7 @@ def update(ctx: click.Context, card_id: int, owner: str | None, summary: tuple[s
 
 
 @cli.command()
-@option_id
+@click.argument("card_id", metavar="ID", type=int)
 @click.pass_context
 def start(ctx: click.Context, card_id: int) -> None:
     """Set a card state to 'wip'."""
@@ -115,7 +110,7 @@ def start(ctx: click.Context, card_id: int) -> None:
 
 
 @cli.command()
-@option_id
+@click.argument("card_id", metavar="ID", type=int)
 @click.pass_context
 def end(ctx: click.Context, card_id: int) -> None:
     """Set a card state to 'done'."""

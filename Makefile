@@ -5,16 +5,29 @@
 .PHONY: tests
 .PHONY: build
 
-#
 
-PYTHON-SYS:= python3.12
+# project specific variables
 
-VENV:= .venv
-# OUTDIR:= --outdir /path
+PYTHON-VERSION := 3.12
+# OUTDIR := --outdir /path
 
-BIN-DIR:= $(VENV)/bin
-PIP-COMPILE:= $(BIN-DIR)/pip-compile
-PYTHON:= $(BIN-DIR)/python
+
+# calculated variables
+
+ifeq ($(OS),Windows_NT)
+	PYTHON-SYS = py -$(PYTHON-VERSION)
+	BIN-NAME = Scripts
+	EXTENSION = .exe
+else
+	PYTHON-SYS = python$(PYTHON-VERSION)
+	BIN-NAME = bin
+endif
+
+VENV-NAME:= .venv
+BIN-DIR:= $(VENV-NAME)/$(BIN-NAME)
+
+PIP-COMPILE:= $(BIN-DIR)/pip-compile$(EXTENSION)
+PYTHON:= $(BIN-DIR)/python$(EXTENSION)
 
 
 #
@@ -60,7 +73,6 @@ build: sync
 	@echo
 	@echo run make dev to continue development
 	@echo
-
 
 
 
