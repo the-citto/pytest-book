@@ -15,6 +15,7 @@ from . import (
 #
 
 
+card_db = api.Db()
 
 
 def _get_card_param(ctx: click.Context, option: str) -> click.Parameter:
@@ -46,7 +47,7 @@ def cli(ctx: click.Context) -> None:
 @click.option("-o", "--owner", type=str)
 def add (summary: str, owner: str | None) -> None:
     """Add a card to DB."""
-    api.add_card(summary=summary, owner=owner)
+    card_db.add_card(summary=summary, owner=owner)
 
 
 @cli.command()
@@ -55,7 +56,7 @@ def add (summary: str, owner: str | None) -> None:
 def delete(ctx: click.Context, card_id: int) -> None:
     """Delete card by id."""
     try:
-        api.delete_card(card_id=card_id)
+        card_db.delete_card(card_id=card_id)
     except api.InvalidCardIdError as err:
         _invalid_card_id(ctx=ctx, card_id=card_id, err=err)
 
@@ -71,7 +72,7 @@ def delete(ctx: click.Context, card_id: int) -> None:
 )
 def list_cards(owner: str | None, states: tuple[api.State, ...]) -> None:
     """List cards."""
-    cards = api.get_cards(owner=owner, states=states)
+    cards = card_db.get_cards(owner=owner, states=states)
     table = rich.table.Table(box=rich.box.SIMPLE)
     for hd in api.COLUMNS:
         table.add_column(hd)
@@ -89,7 +90,7 @@ def list_cards(owner: str | None, states: tuple[api.State, ...]) -> None:
 def update(ctx: click.Context, card_id: int, owner: str | None, summary: str) -> None:
     """Update card."""
     try:
-        api.update_card(card_id=card_id, owner=owner, summary=summary)
+        card_db.update_card(card_id=card_id, owner=owner, summary=summary)
     except api.InvalidCardIdError as err:
         _invalid_card_id(ctx=ctx, card_id=card_id, err=err)
     except sqlalchemy.exc.OperationalError as err:
@@ -104,7 +105,7 @@ def update(ctx: click.Context, card_id: int, owner: str | None, summary: str) ->
 def start(ctx: click.Context, card_id: int) -> None:
     """Set a card state to 'wip'."""
     try:
-        api.start_card(card_id=card_id)
+        card_db.start_card(card_id=card_id)
     except api.InvalidCardIdError as err:
         _invalid_card_id(ctx=ctx, card_id=card_id, err=err)
 
@@ -115,7 +116,7 @@ def start(ctx: click.Context, card_id: int) -> None:
 def end(ctx: click.Context, card_id: int) -> None:
     """Set a card state to 'done'."""
     try:
-        api.end_card(card_id=card_id)
+        card_db.end_card(card_id=card_id)
     except api.InvalidCardIdError as err:
         _invalid_card_id(ctx=ctx, card_id=card_id, err=err)
 
@@ -125,14 +126,14 @@ def config() -> None:
     """Show the path to the Cards DB."""
     table = rich.table.Table(box=rich.box.SIMPLE)
     table.add_column("Database URL")
-    table.add_row(str(api.engine.url))
+    table.add_row(str(card_db.engine.url))
     rich.print(table)
 
 
 @cli.command()
 def count() -> None:
     """Show the number of cards in the DB."""
-    cards_count = api.get_count()
+    cards_count = card_db.get_count()
     table = rich.table.Table(box=rich.box.SIMPLE)
     table.add_column("state")
     table.add_column("count")

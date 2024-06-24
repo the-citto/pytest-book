@@ -1,4 +1,4 @@
-"""Test one."""
+"""Test one - success."""
 
 def test_passing() -> None:
     """First passing test."""

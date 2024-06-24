@@ -93,5 +93,6 @@ ignore = [
 ]
 
 [tool.ruff.isort]
-known-first-party = ["python"]
+# known-first-party = ["python", "cards"]
+known-first-party = ["cards"]
 
