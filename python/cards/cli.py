@@ -10,12 +10,12 @@ import sqlalchemy.exc
 from . import (
     __version__,
     api,
+    db,
 )
 
 #
 
 
-card_db = api.Db()
 
 
 def _get_card_param(ctx: click.Context, option: str) -> click.Parameter:
@@ -27,7 +27,7 @@ def _get_card_param(ctx: click.Context, option: str) -> click.Parameter:
     return param[0]
 
 
-def _invalid_card_id(ctx: click.Context, card_id: int, err: api.InvalidCardIdError) -> None:
+def _invalid_card_id(ctx: click.Context, card_id: int, err: db.InvalidCardIdError) -> None:
     param = _get_card_param(ctx, option="card_id")
     raise click.BadParameter(message=str(card_id),param=param) from err
 
@@ -47,7 +47,7 @@ def cli(ctx: click.Context) -> None:
 @click.option("-o", "--owner", type=str)
 def add (summary: str, owner: str | None) -> None:
     """Add a card to DB."""
-    card_db.add_card(summary=summary, owner=owner)
+    api.add_card(summary=summary, owner=owner)
 
 
 @cli.command()
@@ -67,19 +67,19 @@ def delete(ctx: click.Context, card_id: int) -> None:
     "-s",
     "--state",
     "states",
-    type=click.Choice(typing.get_args(api.State)),
+    type=click.Choice(typing.get_args(db.State)),
     multiple=True,
 )
-def list_cards(owner: str | None, states: tuple[api.State, ...]) -> None:
+def list_cards(owner: str | None, states: tuple[db.State, ...]) -> None:
     """List cards."""
-    cards = card_db.get_cards(owner=owner, states=states)
-    table = rich.table.Table(box=rich.box.SIMPLE)
-    for hd in api.COLUMNS:
-        table.add_column(hd)
-    for card in cards:
-        id_, state, owner, summary = card
-        table.add_row(str(id_), state, owner if owner else "", summary)
-    rich.print(table)
+    # cards = card_db.get_cards(owner=owner, states=states)
+    # table = rich.table.Table(box=rich.box.SIMPLE)
+    # for hd in api.COLUMNS:
+    #     table.add_column(hd)
+    # for card in cards:
+    #     id_, state, owner, summary = card
+    #     table.add_row(str(id_), state, owner if owner else "", summary)
+    # rich.print(table)
 
 
 @cli.command()
@@ -133,7 +133,7 @@ def config() -> None:
 @cli.command()
 def count() -> None:
     """Show the number of cards in the DB."""
-    cards_count = card_db.get_count()
+    cards_count = api.get_count()
     table = rich.table.Table(box=rich.box.SIMPLE)
     table.add_column("state")
     table.add_column("count")

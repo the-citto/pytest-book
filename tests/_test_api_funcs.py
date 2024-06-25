@@ -1,6 +1,6 @@
 """Tests with functions."""
 
-import typing
+# import typing
 
 import pytest
 
@@ -77,18 +77,18 @@ def test_add_card_fail() -> None:
         db.add_card() # pyright: ignore [reportCallIssue]
 
 
-def _set_to_fail(arg_1: typing.Iterable[int], arg_2: typing.Iterable[int]) -> None:
-    __tracebackhide__ = True
-    assert sum(arg_1) == sum(arg_2)
-    if arg_1 != arg_2:
-        pytest.fail("as expected")
+# def _set_to_fail(arg_1: typing.Iterable[int], arg_2: typing.Iterable[int]) -> None:
+#     __tracebackhide__ = True
+#     assert sum(arg_1) == sum(arg_2)
+#     if arg_1 != arg_2:
+#         pytest.fail("as expected")
 
 
-def test_set_to_fail() -> None:
-    """Use set to fail."""
-    arg_1 = (1, 2, 3)
-    arg_2 = (2, 1, 3)
-    _set_to_fail(arg_1=arg_1, arg_2=arg_2)
+# def test_set_to_fail() -> None:
+#     """Use set to fail."""
+#     arg_1 = (1, 2, 3)
+#     arg_2 = (2, 1, 3)
+#     _set_to_fail(arg_1=arg_1, arg_2=arg_2)
 
 
 
