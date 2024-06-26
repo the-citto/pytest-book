@@ -48,16 +48,17 @@ class Cards(SqlBase):
 
 
 
-
+GetCount = typing.Sequence[sqlalchemy.Row[tuple[State, int]]]
+GetCards = typing.Sequence[sqlalchemy.Row[tuple[int, State, str | None, str]]]
 
 class Db(orm.Session):
     """Database session."""
 
-    def __init__(self, path: str | pathlib.Path) -> None:
+    def __init__(self, path: str | pathlib.Path = "cards.sqlite") -> None:
         """Init."""
-        engine = sqlalchemy.create_engine(f"sqlite:///{path}")
-        SqlBase.metadata.create_all(bind=engine)
-        super().__init__(bind=engine)
+        self.engine = sqlalchemy.create_engine(f"sqlite:///{path}")
+        SqlBase.metadata.create_all(bind=self.engine)
+        super().__init__(bind=self.engine)
 
     def _execute_dml(self, *, stmt: dml.Insert | dml.Update | dml.Delete) -> None:
         curs = self.execute(stmt)
@@ -73,12 +74,7 @@ class Db(orm.Session):
         stmt = sqlalchemy.insert(Cards).values(owner=owner, summary=summary)
         self._execute_dml(stmt=stmt)
 
-    def get_cards(
-        self,
-        *,
-        owner: str | None = None,
-        states: tuple[State, ...] = (),
-    ) -> typing.Sequence[sqlalchemy.Row[tuple[int, State, str | None, str]]]:
+    def get_cards(self, *, owner: str | None = None, states: tuple[State, ...] = ()) -> GetCards:
         """Get cards."""
         stmt = sqlalchemy.select(Cards.id, Cards.state, Cards.owner, Cards.summary)
         if owner is not None:
@@ -114,7 +110,7 @@ class Db(orm.Session):
         self._execute_dml(stmt=stmt)
 
 
-    def get_count(self) -> typing.Sequence[sqlalchemy.Row[tuple[State, int]]]:
+    def get_count(self) -> GetCount:
         """Get count of cards."""
         case_order = {s: n for n, s in enumerate(typing.get_args(State))}
         stmt = sqlalchemy.select(Cards.state, sqlalchemy.func.count(Cards.state))

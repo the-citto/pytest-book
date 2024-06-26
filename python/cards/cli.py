@@ -47,7 +47,7 @@ def cli(ctx: click.Context) -> None:
 @click.option("-o", "--owner", type=str)
 def add (summary: str, owner: str | None) -> None:
     """Add a card to DB."""
-    api.add_card(summary=summary, owner=owner)
+    api.call_db(db_method="add_card", summary=summary, owner=owner)
 
 
 @cli.command()
@@ -56,8 +56,8 @@ def add (summary: str, owner: str | None) -> None:
 def delete(ctx: click.Context, card_id: int) -> None:
     """Delete card by id."""
     try:
-        card_db.delete_card(card_id=card_id)
-    except api.InvalidCardIdError as err:
+        api.call_db(db_method="delete_card", card_id=card_id)
+    except db.InvalidCardIdError as err:
         _invalid_card_id(ctx=ctx, card_id=card_id, err=err)
 
 
@@ -72,14 +72,14 @@ def delete(ctx: click.Context, card_id: int) -> None:
 )
 def list_cards(owner: str | None, states: tuple[db.State, ...]) -> None:
     """List cards."""
-    # cards = card_db.get_cards(owner=owner, states=states)
-    # table = rich.table.Table(box=rich.box.SIMPLE)
-    # for hd in api.COLUMNS:
-    #     table.add_column(hd)
-    # for card in cards:
-    #     id_, state, owner, summary = card
-    #     table.add_row(str(id_), state, owner if owner else "", summary)
-    # rich.print(table)
+    cards = api.call_db(db_method="get_cards", owner=owner, states=states)
+    table = rich.table.Table(box=rich.box.SIMPLE)
+    for hd in db.COLUMNS:
+        table.add_column(hd)
+    for card in cards:
+        id_, state, owner, summary = card
+        table.add_row(str(id_), state, owner if owner else "", summary)
+    rich.print(table)
 
 
 @cli.command()
@@ -90,8 +90,8 @@ def list_cards(owner: str | None, states: tuple[db.State, ...]) -> None:
 def update(ctx: click.Context, card_id: int, owner: str | None, summary: str) -> None:
     """Update card."""
     try:
-        card_db.update_card(card_id=card_id, owner=owner, summary=summary)
-    except api.InvalidCardIdError as err:
+        api.call_db(db_method="update_card", card_id=card_id, owner=owner, summary=summary)
+    except db.InvalidCardIdError as err:
         _invalid_card_id(ctx=ctx, card_id=card_id, err=err)
     except sqlalchemy.exc.OperationalError as err:
         owner_opts = [f"'{o}'" for o in _get_card_param(ctx, option="owner").opts]
@@ -105,8 +105,8 @@ def update(ctx: click.Context, card_id: int, owner: str | None, summary: str) ->
 def start(ctx: click.Context, card_id: int) -> None:
     """Set a card state to 'wip'."""
     try:
-        card_db.start_card(card_id=card_id)
-    except api.InvalidCardIdError as err:
+        api.call_db(db_method="start_card", card_id=card_id)
+    except db.InvalidCardIdError as err:
         _invalid_card_id(ctx=ctx, card_id=card_id, err=err)
 
 
@@ -116,24 +116,25 @@ def start(ctx: click.Context, card_id: int) -> None:
 def end(ctx: click.Context, card_id: int) -> None:
     """Set a card state to 'done'."""
     try:
-        card_db.end_card(card_id=card_id)
-    except api.InvalidCardIdError as err:
+        api.call_db(db_method="end_card", card_id=card_id)
+    except db.InvalidCardIdError as err:
         _invalid_card_id(ctx=ctx, card_id=card_id, err=err)
 
 
 @cli.command()
 def config() -> None:
     """Show the path to the Cards DB."""
+    db_path = api.call_db(db_method="config")
     table = rich.table.Table(box=rich.box.SIMPLE)
     table.add_column("Database URL")
-    table.add_row(str(card_db.engine.url))
+    table.add_row(str(db_path))
     rich.print(table)
 
 
 @cli.command()
 def count() -> None:
     """Show the number of cards in the DB."""
-    cards_count = api.get_count()
+    cards_count = api.call_db(db_method="get_count")
     table = rich.table.Table(box=rich.box.SIMPLE)
     table.add_column("state")
     table.add_column("count")

@@ -8,5 +8,4 @@ __version__ = importlib.metadata.version(__name__)
 
 __all__ = []
 
-print(__name__)
 
