@@ -4,3 +4,9 @@ my excercises following [Python Testing with pytest, 2nd Edition](https://python
 
 `cards`, the simple app to follow along, fully rewritten with `click`instead of `typer` and `SQLite` + `SQLAlchemy` instead of `tynydb`
 
+## CH03
+refactored to separate context creations from `cli` module to `api`
+
+too coupled
+
+

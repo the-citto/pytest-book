@@ -1,5 +1,6 @@
 """Cards api."""
 
+import pathlib
 import typing
 
 from . import db
@@ -20,10 +21,10 @@ DbMethods = typing.Literal[
 ]
 
 @typing.overload
-def call_db(*, db_method: DbMethods, path: str = "cards.sqlite") -> db.GetCount | str: ...
+def call_db(*, db_method: DbMethods, path: pathlib.Path | str = "cards.sqlite") -> db.GetCount | str: ...
 
 @typing.overload
-def call_db(*, db_method: DbMethods, card_id: db.Id, path: str = "cards.sqlite") -> None: ...
+def call_db(*, db_method: DbMethods, card_id: db.Id, path: pathlib.Path | str = "cards.sqlite") -> None: ...
 
 @typing.overload
 def call_db(
@@ -31,14 +32,14 @@ def call_db(
     db_method: DbMethods,
     summary: db.Summary,
     owner: db.Owner = None,
-    path: str = "cards.sqlite",
+    path: pathlib.Path | str = "cards.sqlite",
 ) -> None: ...
 
 @typing.overload
 def call_db(
     *,
     db_method: DbMethods,
-    path: str = "cards.sqlite",
+    path: pathlib.Path | str = "cards.sqlite",
     owner: db.Owner = None,
     states: db.States = (),
 ) -> db.GetCards: ...
@@ -50,7 +51,7 @@ def call_db(
     card_id: db.Id,
     owner: db.Owner = None,
     summary: db.Summary,
-    path: str = "cards.sqlite",
+    path: pathlib.Path | str = "cards.sqlite",
 ) -> db.GetCount: ...
 
 def call_db( # noqa: PLR0913
@@ -58,7 +59,7 @@ def call_db( # noqa: PLR0913
     db_method: DbMethods,
     summary: db.Summary | None = None,
     card_id: db.Id | None = None,
-    path: str = "cards.sqlite",
+    path: pathlib.Path | str = "cards.sqlite",
     owner: db.Owner = None,
     states: db.States | None = None,
 ) -> db.GetCount | db.GetCards | str | None:
