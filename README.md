@@ -17,5 +17,17 @@ likely further refactoring will be required to adapt the app structure to test -
 
 
 
+## next steps
+once finished this project, [Test-Driven Development with Python](https://www.obeythetestinggoat.com/pages/book.html)
+aka **Obey the Testing Goat!**
+
+(in fact, took the idea of branching every chapter from there)
+
+in the 'the goat book' the project is developed with `Django` and the tests implemented with `unittest`
+
+I'll take the same approach as here, and use `Flask` and `pytest`
+
+
+
 
 
