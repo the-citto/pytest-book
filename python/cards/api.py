@@ -20,11 +20,17 @@ DbMethods = typing.Literal[
 ]
 
 @typing.overload
+def call_db(*, db_method: DbMethods, path: str = "cards.sqlite") -> db.GetCount | str: ...
+
+@typing.overload
+def call_db(*, db_method: DbMethods, card_id: db.Id, path: str = "cards.sqlite") -> None: ...
+
+@typing.overload
 def call_db(
     *,
     db_method: DbMethods,
-    summary: str,
-    owner: str | None = None,
+    summary: db.Summary,
+    owner: db.Owner = None,
     path: str = "cards.sqlite",
 ) -> None: ...
 
@@ -32,51 +38,29 @@ def call_db(
 def call_db(
     *,
     db_method: DbMethods,
-    card_id: int,
     path: str = "cards.sqlite",
-) -> None: ...
-
-@typing.overload
-def call_db(
-    *,
-    db_method: DbMethods,
-    path: str = "cards.sqlite",
-    owner: str | None = None,
-    states: tuple[db.State, ...] = (),
+    owner: db.Owner = None,
+    states: db.States = (),
 ) -> db.GetCards: ...
 
 @typing.overload
 def call_db(
     *,
     db_method: DbMethods,
-    path: str = "cards.sqlite",
-) -> db.GetCount | str: ...
-
-# @typing.overload
-# def call_db(
-#     *,
-#     db_method: DbMethods,
-#     path: str = "cards.sqlite",
-# ) -> str: ...
-
-@typing.overload
-def call_db(
-    *,
-    db_method: DbMethods,
-    card_id: int,
-    owner: str | None = None,
-    summary: str,
+    card_id: db.Id,
+    owner: db.Owner = None,
+    summary: db.Summary,
     path: str = "cards.sqlite",
 ) -> db.GetCount: ...
 
 def call_db( # noqa: PLR0913
     *,
     db_method: DbMethods,
-    summary: str | None = None,
-    card_id: int | None = None,
+    summary: db.Summary | None = None,
+    card_id: db.Id | None = None,
     path: str = "cards.sqlite",
-    owner: str | None = None,
-    states: tuple[db.State, ...] | None = None,
+    owner: db.Owner = None,
+    states: db.States | None = None,
 ) -> db.GetCount | db.GetCards | str | None:
     """Call db."""
     with db.Db(path=path) as cards_db:
@@ -102,13 +86,6 @@ def call_db( # noqa: PLR0913
                 raise TypeError(db_method)
         return None
 
-
-
-# call_db(db_method="get_count")
-# call_db(db_method="get_cards")
-# call_db(db_method="add_card", summary="foo")
-# call_db(db_method="delete_card", card_id=4)
-# call_db(db_method="start_card", card_id=3)
 
 
 

@@ -14,8 +14,10 @@ from sqlalchemy.sql import (
 
 
 State = typing.Literal["todo", "wip", "done"]
-
-
+States = tuple[State, ...]
+Summary = str
+Owner = str | None
+Id = int
 
 COLUMNS = ["id", "state", "owner", "summary"]
 
@@ -69,12 +71,12 @@ class Db(orm.Session):
     def _execute_dql(self, *, stmt: selectable.Select) -> typing.Sequence[sqlalchemy.Row]:
         return self.execute(stmt).fetchall()
 
-    def add_card(self, *, summary: str, owner: str | None = None) -> None:
+    def add_card(self, *, summary: Summary, owner: Owner = None) -> None:
         """Add card to DB."""
         stmt = sqlalchemy.insert(Cards).values(owner=owner, summary=summary)
         self._execute_dml(stmt=stmt)
 
-    def get_cards(self, *, owner: str | None = None, states: tuple[State, ...] = ()) -> GetCards:
+    def get_cards(self, *, owner: Owner = None, states: States = ()) -> GetCards:
         """Get cards."""
         stmt = sqlalchemy.select(Cards.id, Cards.state, Cards.owner, Cards.summary)
         if owner is not None:
@@ -83,12 +85,12 @@ class Db(orm.Session):
             stmt.where(Cards.state.in_(states))
         return self._execute_dql(stmt=stmt)
 
-    def delete_card(self, *, card_id: int) -> None:
+    def delete_card(self, *, card_id: Id) -> None:
         """Delete card."""
         stmt = sqlalchemy.delete(Cards).where(Cards.id == card_id)
         self._execute_dml(stmt=stmt)
 
-    def update_card(self, *, card_id: int, owner: str | None, summary: str) -> None:
+    def update_card(self, *, card_id: Id, owner: Owner, summary: Summary) -> None:
         """Update card."""
         stmt = sqlalchemy.update(Cards).where(Cards.id == card_id)
         if owner is not None:
@@ -98,13 +100,13 @@ class Db(orm.Session):
         self._execute_dml(stmt=stmt)
 
 
-    def start_card(self, *, card_id: int) -> None:
+    def start_card(self, *, card_id: Id) -> None:
         """Start card."""
         stmt = sqlalchemy.update(Cards).where(Cards.id == card_id).values(state="wip")
         self._execute_dml(stmt=stmt)
 
 
-    def end_card(self, *, card_id: int) -> None:
+    def end_card(self, *, card_id: Id) -> None:
         """Start card."""
         stmt = sqlalchemy.update(Cards).where(Cards.id == card_id).values(state="done")
         self._execute_dml(stmt=stmt)

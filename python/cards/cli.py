@@ -125,9 +125,12 @@ def end(ctx: click.Context, card_id: int) -> None:
 def config() -> None:
     """Show the path to the Cards DB."""
     db_path = api.call_db(db_method="config")
+    if not isinstance(db_path, str):
+        err_msg = f"The API returned {type(db_path)} instead of str"
+        raise click.UsageError(err_msg)
     table = rich.table.Table(box=rich.box.SIMPLE)
     table.add_column("Database URL")
-    table.add_row(str(db_path))
+    table.add_row(db_path)
     rich.print(table)
 
 
