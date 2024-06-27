@@ -5,32 +5,20 @@ import typing
 
 import sqlalchemy
 from sqlalchemy import orm
-from sqlalchemy.sql import (
-    dml,
-    selectable,
-)
 
 #
 
-
-State = typing.Literal["todo", "wip", "done"]
-States = tuple[State, ...]
-Summary = str
-Owner = str | None
-Id = int
 
 COLUMNS = ["id", "state", "owner", "summary"]
 
 
 
-class CardsError(Exception):
-    """General Cards exception."""
+DbPath = str | pathlib.Path
 
-class MissingSummaryError(CardsError):
-    """Missing summary."""
-
-class InvalidCardIdError(CardsError):
-    """Card invalid id error."""
+State = typing.Literal["todo", "wip", "done"]
+Summary = str
+Owner = str | None
+Id = int
 
 
 
@@ -43,82 +31,20 @@ class Cards(SqlBase):
 
     __tablename__ = "cards"
 
-    id: orm.Mapped[int] = orm.mapped_column(primary_key=True, autoincrement=True)
-    summary: orm.Mapped[str] = orm.mapped_column(sqlalchemy.String(50))
-    owner: orm.Mapped[str | None] = orm.mapped_column(sqlalchemy.String(20), default=None)
+    id: orm.Mapped[Id] = orm.mapped_column(primary_key=True, autoincrement=True)
+    summary: orm.Mapped[Summary] = orm.mapped_column(sqlalchemy.String(50))
+    owner: orm.Mapped[Owner] = orm.mapped_column(sqlalchemy.String(20), default=None)
     state: orm.Mapped[State] = orm.mapped_column(sqlalchemy.String(20), default="todo")
 
 
-
-GetCount = typing.Sequence[sqlalchemy.Row[tuple[State, int]]]
-GetCards = typing.Sequence[sqlalchemy.Row[tuple[int, State, str | None, str]]]
-
-class Db(orm.Session):
+class CardsDb(orm.Session):
     """Database session."""
 
-    def __init__(self, path: str | pathlib.Path) -> None:
+    def __init__(self, path: DbPath) -> None:
         """Init."""
         self.engine = sqlalchemy.create_engine(f"sqlite:///{path}")
         SqlBase.metadata.create_all(bind=self.engine)
         super().__init__(bind=self.engine)
-
-    def _execute_dml(self, *, stmt: dml.Insert | dml.Update | dml.Delete) -> None:
-        curs = self.execute(stmt)
-        if curs.rowcount != 1:
-            raise InvalidCardIdError
-        self.commit()
-
-    def _execute_dql(self, *, stmt: selectable.Select) -> typing.Sequence[sqlalchemy.Row]:
-        return self.execute(stmt).fetchall()
-
-    def add_card(self, *, summary: Summary, owner: Owner = None) -> None:
-        """Add card to DB."""
-        stmt = sqlalchemy.insert(Cards).values(owner=owner, summary=summary)
-        self._execute_dml(stmt=stmt)
-
-    def get_cards(self, *, owner: Owner = None, states: States = ()) -> GetCards:
-        """Get cards."""
-        stmt = sqlalchemy.select(Cards.id, Cards.state, Cards.owner, Cards.summary)
-        if owner is not None:
-            stmt = stmt.where(Cards.owner == owner)
-        if states:
-            stmt.where(Cards.state.in_(states))
-        return self._execute_dql(stmt=stmt)
-
-    def delete_card(self, *, card_id: Id) -> None:
-        """Delete card."""
-        stmt = sqlalchemy.delete(Cards).where(Cards.id == card_id)
-        self._execute_dml(stmt=stmt)
-
-    def update_card(self, *, card_id: Id, owner: Owner, summary: Summary) -> None:
-        """Update card."""
-        stmt = sqlalchemy.update(Cards).where(Cards.id == card_id)
-        if owner is not None:
-            stmt = stmt.values(owner=owner)
-        if summary:
-            stmt = stmt.values(summary=summary)
-        self._execute_dml(stmt=stmt)
-
-
-    def start_card(self, *, card_id: Id) -> None:
-        """Start card."""
-        stmt = sqlalchemy.update(Cards).where(Cards.id == card_id).values(state="wip")
-        self._execute_dml(stmt=stmt)
-
-
-    def end_card(self, *, card_id: Id) -> None:
-        """Start card."""
-        stmt = sqlalchemy.update(Cards).where(Cards.id == card_id).values(state="done")
-        self._execute_dml(stmt=stmt)
-
-
-    def get_count(self) -> GetCount:
-        """Get count of cards."""
-        case_order = {s: n for n, s in enumerate(typing.get_args(State))}
-        stmt = sqlalchemy.select(Cards.state, sqlalchemy.func.count(Cards.state))
-        stmt = stmt.group_by(Cards.state)
-        stmt = stmt.order_by(sqlalchemy.case(case_order, value=Cards.state))
-        return self._execute_dql(stmt=stmt)
 
 
 

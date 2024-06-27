@@ -1,94 +1,133 @@
 """Cards api."""
 
-import pathlib
 import typing
+
+import sqlalchemy
+from sqlalchemy.sql.dml import (
+    Delete,
+    Insert,
+    Update,
+)
+from sqlalchemy.sql.selectable import Select
 
 from . import db
 
 #
 
 
+CARDS_DB = "cards.sqlite"
 
-DbMethods = typing.Literal[
-    "add_card",
-    "config",
-    "delete_card",
-    "end_card",
-    "get_cards",
-    "get_count",
-    "start_card",
-    "update_card",
-]
 
-@typing.overload
-def call_db(*, db_method: DbMethods, path: pathlib.Path | str = "cards.sqlite") -> db.GetCount | str: ...
 
-@typing.overload
-def call_db(*, db_method: DbMethods, card_id: db.Id, path: pathlib.Path | str = "cards.sqlite") -> None: ...
+Dml = Delete | Insert | Update
+Dql = Select
 
-@typing.overload
-def call_db(
+States = tuple[db.State, ...]
+
+GetCount = typing.Sequence[sqlalchemy.Row[tuple[db.State, int]]]
+GetCards = typing.Sequence[sqlalchemy.Row[tuple[db.Id, db.State, db.Owner, db.Summary]]]
+DqlResult = typing.Sequence[sqlalchemy.Row]
+Url = str
+
+
+class CardsError(Exception):
+    """General Cards exception."""
+
+class MissingSummaryError(CardsError):
+    """Missing summary."""
+
+class InvalidCardIdError(CardsError):
+    """Card invalid id error."""
+
+
+
+def _dml_execute(*, path: db.DbPath, stmt: Dml) -> None:
+    with db.CardsDb(path=path) as cards_db:
+        # cards_db.execute_dml(stmt=stmt)
+        curs = cards_db.execute(stmt)
+        if curs.rowcount != 1:
+            raise InvalidCardIdError
+        cards_db.commit()
+
+
+def _dql_execute(*, path: db.DbPath, stmt: Dql) -> DqlResult:
+    with db.CardsDb(path=path) as cards_db:
+        return cards_db.execute(stmt).fetchall()
+
+
+
+def add_card(
     *,
-    db_method: DbMethods,
     summary: db.Summary,
     owner: db.Owner = None,
-    path: pathlib.Path | str = "cards.sqlite",
-) -> None: ...
+    path: db.DbPath = CARDS_DB,
+) -> None:
+    """Add card to DB."""
+    stmt = sqlalchemy.insert(db.Cards).values(owner=owner, summary=summary)
+    _dml_execute(path=path, stmt=stmt)
 
-@typing.overload
-def call_db(
+
+def get_cards(
     *,
-    db_method: DbMethods,
-    path: pathlib.Path | str = "cards.sqlite",
-    owner: db.Owner = None,
-    states: db.States = (),
-) -> db.GetCards: ...
-
-@typing.overload
-def call_db(
-    *,
-    db_method: DbMethods,
-    card_id: db.Id,
-    owner: db.Owner = None,
-    summary: db.Summary,
-    path: pathlib.Path | str = "cards.sqlite",
-) -> db.GetCount: ...
-
-def call_db( # noqa: PLR0913
-    *,
-    db_method: DbMethods,
-    summary: db.Summary | None = None,
-    card_id: db.Id | None = None,
-    path: pathlib.Path | str = "cards.sqlite",
-    owner: db.Owner = None,
-    states: db.States | None = None,
-) -> db.GetCount | db.GetCards | str | None:
-    """Call db."""
-    with db.Db(path=path) as cards_db:
-        if db_method == "config":
-            return str(cards_db.engine.url)
-        _method = getattr(cards_db, db_method)
-        match db_method:
-            case "add_card":
-                _method(summary=summary, owner=owner)
-            case "delete_card":
-                _method(card_id=card_id)
-            case "end_card":
-                _method(card_id=card_id)
-            case "get_cards":
-                return _method(owner=owner, states=states)
-            case "get_count":
-                return _method()
-            case "start_card":
-                _method(card_id=card_id)
-            case "update_card":
-                _method(card_id=card_id, owner=owner, summary=summary)
-            case _:
-                raise TypeError(db_method)
-        return None
+    owner: db.Owner,
+    states: States,
+    path: db.DbPath = CARDS_DB,
+) -> GetCards:
+    """Get cards."""
+    stmt = sqlalchemy.select(db.Cards.id, db.Cards.state, db.Cards.owner, db.Cards.summary)
+    if owner is not None:
+        stmt = stmt.where(db.Cards.owner == owner)
+    if states:
+        stmt.where(db.Cards.state.in_(states))
+    return _dql_execute(path=path, stmt=stmt)
 
 
+def delete_card(*, card_id: db.Id, path: db.DbPath = CARDS_DB) -> None:
+    """Delete card."""
+    stmt = sqlalchemy.delete(db.Cards).where(db.Cards.id == card_id)
+    _dml_execute(path=path, stmt=stmt)
 
+
+def update_card(
+    *, card_id: db.Id,
+    owner: db.Owner,
+    summary: db.Summary | None,
+    path: db.DbPath = CARDS_DB,
+) -> None:
+    """Update card."""
+    stmt = sqlalchemy.update(db.Cards).where(db.Cards.id == card_id)
+    if owner is not None:
+        stmt = stmt.values(owner=owner)
+    if summary:
+        stmt = stmt.values(summary=summary)
+    _dml_execute(path=path, stmt=stmt)
+
+
+def start_card(*, card_id: db.Id, path: db.DbPath = CARDS_DB) -> None:
+    """Start card."""
+    stmt = sqlalchemy.update(db.Cards).where(db.Cards.id == card_id).values(state="wip")
+    _dml_execute(path=path, stmt=stmt)
+
+
+def end_card(*, card_id: db.Id, path: db.DbPath = CARDS_DB) -> None:
+    """Start card."""
+    stmt = sqlalchemy.update(db.Cards).where(db.Cards.id == card_id).values(state="done")
+    _dml_execute(path=path, stmt=stmt)
+
+
+def get_count(path: db.DbPath = CARDS_DB) -> GetCount:
+    """Get count of cards."""
+    case_order = {s: n for n, s in enumerate(typing.get_args(db.State))}
+    stmt = sqlalchemy.select(db.Cards.state, sqlalchemy.func.count(db.Cards.state))
+    stmt = stmt.group_by(db.Cards.state)
+    stmt = stmt.order_by(sqlalchemy.case(case_order, value=db.Cards.state))
+    return _dql_execute(path=path, stmt=stmt)
+
+
+def get_url(path: db.DbPath = CARDS_DB) -> Url:
+    """Get DB URL."""
+    with db.CardsDb(path=path) as cards_db:
+        return str(cards_db.engine.url)
 
 
 

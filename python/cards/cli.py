@@ -27,7 +27,7 @@ def _get_card_param(ctx: click.Context, option: str) -> click.Parameter:
     return param[0]
 
 
-def _invalid_card_id(ctx: click.Context, card_id: int, err: db.InvalidCardIdError) -> None:
+def _invalid_card_id(ctx: click.Context, card_id: int, err: api.InvalidCardIdError) -> None:
     param = _get_card_param(ctx, option="card_id")
     raise click.BadParameter(message=str(card_id),param=param) from err
 
@@ -47,7 +47,7 @@ def cli(ctx: click.Context) -> None:
 @click.option("-o", "--owner", type=str)
 def add (summary: str, owner: str | None) -> None:
     """Add a card to DB."""
-    api.call_db(db_method="add_card", summary=summary, owner=owner)
+    api.add_card(summary=summary, owner=owner)
 
 
 @cli.command()
@@ -56,8 +56,8 @@ def add (summary: str, owner: str | None) -> None:
 def delete(ctx: click.Context, card_id: int) -> None:
     """Delete card by id."""
     try:
-        api.call_db(db_method="delete_card", card_id=card_id)
-    except db.InvalidCardIdError as err:
+        api.delete_card(card_id=card_id)
+    except api.InvalidCardIdError as err:
         _invalid_card_id(ctx=ctx, card_id=card_id, err=err)
 
 
@@ -72,7 +72,7 @@ def delete(ctx: click.Context, card_id: int) -> None:
 )
 def list_cards(owner: str | None, states: tuple[db.State, ...]) -> None:
     """List cards."""
-    cards = api.call_db(db_method="get_cards", owner=owner, states=states)
+    cards = api.get_cards(owner=owner, states=states)
     table = rich.table.Table(box=rich.box.SIMPLE)
     for hd in db.COLUMNS:
         table.add_column(hd)
@@ -90,8 +90,8 @@ def list_cards(owner: str | None, states: tuple[db.State, ...]) -> None:
 def update(ctx: click.Context, card_id: int, owner: str | None, summary: str) -> None:
     """Update card."""
     try:
-        api.call_db(db_method="update_card", card_id=card_id, owner=owner, summary=summary)
-    except db.InvalidCardIdError as err:
+        api.update_card(card_id=card_id, owner=owner, summary=summary)
+    except api.InvalidCardIdError as err:
         _invalid_card_id(ctx=ctx, card_id=card_id, err=err)
     except sqlalchemy.exc.OperationalError as err:
         owner_opts = [f"'{o}'" for o in _get_card_param(ctx, option="owner").opts]
@@ -105,8 +105,8 @@ def update(ctx: click.Context, card_id: int, owner: str | None, summary: str) ->
 def start(ctx: click.Context, card_id: int) -> None:
     """Set a card state to 'wip'."""
     try:
-        api.call_db(db_method="start_card", card_id=card_id)
-    except db.InvalidCardIdError as err:
+        api.start_card(card_id=card_id)
+    except api.InvalidCardIdError as err:
         _invalid_card_id(ctx=ctx, card_id=card_id, err=err)
 
 
@@ -116,28 +116,25 @@ def start(ctx: click.Context, card_id: int) -> None:
 def end(ctx: click.Context, card_id: int) -> None:
     """Set a card state to 'done'."""
     try:
-        api.call_db(db_method="end_card", card_id=card_id)
-    except db.InvalidCardIdError as err:
+        api.end_card(card_id=card_id)
+    except api.InvalidCardIdError as err:
         _invalid_card_id(ctx=ctx, card_id=card_id, err=err)
 
 
 @cli.command()
-def config() -> None:
+def url() -> None:
     """Show the path to the Cards DB."""
-    db_path = api.call_db(db_method="config")
-    if not isinstance(db_path, str):
-        err_msg = f"The API returned {type(db_path)} instead of str"
-        raise click.UsageError(err_msg)
+    db_url = api.get_url()
     table = rich.table.Table(box=rich.box.SIMPLE)
     table.add_column("Database URL")
-    table.add_row(db_path)
+    table.add_row(db_url)
     rich.print(table)
 
 
 @cli.command()
 def count() -> None:
     """Show the number of cards in the DB."""
-    cards_count = api.call_db(db_method="get_count")
+    cards_count = api.get_count()
     table = rich.table.Table(box=rich.box.SIMPLE)
     table.add_column("state")
     table.add_column("count")
