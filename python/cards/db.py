@@ -54,7 +54,7 @@ GetCards = typing.Sequence[sqlalchemy.Row[tuple[int, State, str | None, str]]]
 class Db(orm.Session):
     """Database session."""
 
-    def __init__(self, path: str | pathlib.Path = "cards.sqlite") -> None:
+    def __init__(self, path: str | pathlib.Path) -> None:
         """Init."""
         self.engine = sqlalchemy.create_engine(f"sqlite:///{path}")
         SqlBase.metadata.create_all(bind=self.engine)
