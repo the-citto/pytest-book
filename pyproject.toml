@@ -43,6 +43,7 @@ package-dir = {"" = "python"}
 
 
 [tool.pyright]
+# pythonVersion = "3.12"
 venvPath = "."
 venv = ".venv"
 
@@ -59,7 +60,21 @@ exclude = [
 ]
 
 
+[tool.mypy]
+# python_version = "3.12"
+python_executable = ".venv/bin/python"
+ignore_missing_imports = true
+exclude = [
+    "__pycache__",
+    ".git",
+    ".venv",
+    "_old",
+    "_tmp",
+]
+
+
 [tool.ruff]
+# target-version = "py312"
 exclude = [
     "__pycache__",
     ".git",
@@ -69,7 +84,6 @@ exclude = [
 ]
 line-length = 120
 indent-width = 4
-target-version = "py312"
 
 [tool.ruff.lint]
 select = [
@@ -79,6 +93,7 @@ ignore = [
     # This rule is deprecated and will be removed in a future release.
     "ANN101", # Missing type annotation for `self` in method
     "ERA001", # Found commented-out code
+    "PLR2044", # Line with empty comment
     "TD003", # Missing issue link on the line following this TODO
 ]
 
@@ -93,6 +108,8 @@ ignore = [
 ]
 
 [tool.ruff.isort]
-# known-first-party = ["python", "cards"]
 known-first-party = ["cards"]
+
+
+
 
