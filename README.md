@@ -20,6 +20,12 @@ most of db setup set in fixtures
 ## ch03-3
 refactored to use fixtures db setp only
 
+chapter on the book ended showing random finctionalities out of context - said hooks will be done properly in ch15
+
+_useful bit_ `-s` flag as a shortcut for `--capture=no` to avoid capturing prints
+
+## ch04-0
+
 
 
 ## next steps

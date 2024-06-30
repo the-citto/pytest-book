@@ -5,7 +5,6 @@ import tempfile
 import typing
 
 import pytest
-import sqlalchemy
 
 from cards import (
     api,
@@ -19,24 +18,6 @@ DUMMY_DATA_ENTRIES = 6
 
 
 TempDbPath = dict[typing.Literal["path"], pathlib.Path]
-
-
-
-@pytest.fixture(scope="module")
-def temp_db_path_mod() -> typing.Generator[TempDbPath, None, None]:
-    """Yield temporary SQLite DB in tempfile.TemporaryDirectory() - module scope."""
-    with tempfile.TemporaryDirectory() as temp_dir:
-        yield {"path": pathlib.Path(temp_dir) / "temp_cards.sqlite"}
-
-
-@pytest.fixture()
-def empty_db_path(temp_db_path_mod: TempDbPath) -> TempDbPath:
-    """Delete DB content."""
-    stmt = sqlalchemy.delete(db.Cards)
-    with db.CardsDb(**temp_db_path_mod) as cards_db:
-        cards_db.execute(stmt)
-        cards_db.commit()
-    return temp_db_path_mod
 
 
 @pytest.fixture()
@@ -55,12 +36,32 @@ def dummy_data() -> list[db.Cards]:
 
 
 @pytest.fixture()
-def populate_db(temp_db_path: TempDbPath, dummy_data: list[db.Cards]) -> TempDbPath:
+def populated_db(temp_db_path: TempDbPath, dummy_data: list[db.Cards]) -> TempDbPath:
     for c in dummy_data:
         api.add_card(summary=c.summary, owner=c.owner, **temp_db_path)
     return temp_db_path
 
 
+
+
+### completely lacking in the book with a mere reference "it'll be explained in chapter 15"
+# def pytest_addoption(parser):
+#     parser.addoption(
+#         "--func-db",
+#         action="store_true",
+#         defalut=False,
+#         help="new db for ech test",
+#     )
+#
+# def db_scope(fixture_name, config):
+#     if config.getoption("--finc-test"):
+#         return "function"
+#     return "session"
+#
+# @pytest.fixture(scope=db_scope)
+# def cards_db():
+#     with tempfile.TemporaryDirectory() as temp_dir:
+#         yield {"path": pathlib.Path(temp_dir) / "temp_cards.sqlite"}
 
 
 
