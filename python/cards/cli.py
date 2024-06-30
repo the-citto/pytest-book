@@ -74,7 +74,7 @@ def list_cards(owner: str | None, states: tuple[db.State, ...]) -> None:
     """List cards."""
     cards = api.get_cards(owner=owner, states=states)
     table = rich.table.Table(box=rich.box.SIMPLE)
-    for hd in db.COLUMNS:
+    for hd in api.DB_COLUMNS:
         table.add_column(hd)
     for card in cards:
         id_, state, owner, summary = card

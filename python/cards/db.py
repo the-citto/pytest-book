@@ -9,10 +9,6 @@ from sqlalchemy import orm
 #
 
 
-COLUMNS = ["id", "state", "owner", "summary"]
-
-
-
 DbPath = str | pathlib.Path
 
 State = typing.Literal["todo", "wip", "done"]

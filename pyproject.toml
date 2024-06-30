@@ -63,7 +63,6 @@ exclude = [
 [tool.mypy]
 # python_version = "3.12"
 python_executable = ".venv/bin/python"
-ignore_missing_imports = true
 exclude = [
     "__pycache__",
     ".git",
@@ -71,6 +70,10 @@ exclude = [
     "_old",
     "_tmp",
 ]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
 
 
 [tool.ruff]
@@ -105,6 +108,7 @@ ignore = [
     "PLR2004", # Magic value used in comparison
     "S101",  # Use of `assert` detected
     # "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "SLF001" # Private member accessed
 ]
 
 [tool.ruff.isort]

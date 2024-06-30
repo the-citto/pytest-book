@@ -15,8 +15,8 @@ from . import db
 #
 
 
-CARDS_DB = "cards.sqlite"
-
+DB_NAME = "cards.sqlite"
+DB_COLUMNS = ["id", "state", "owner", "summary"]
 
 
 Dml = Delete | Insert | Update
@@ -43,7 +43,6 @@ class InvalidCardIdError(CardsError):
 
 def _dml_execute(*, path: db.DbPath, stmt: Dml) -> None:
     with db.CardsDb(path=path) as cards_db:
-        # cards_db.execute_dml(stmt=stmt)
         curs = cards_db.execute(stmt)
         if curs.rowcount != 1:
             raise InvalidCardIdError
@@ -60,7 +59,7 @@ def add_card(
     *,
     summary: db.Summary,
     owner: db.Owner = None,
-    path: db.DbPath = CARDS_DB,
+    path: db.DbPath = DB_NAME,
 ) -> None:
     """Add card to DB."""
     stmt = sqlalchemy.insert(db.Cards).values(owner=owner, summary=summary)
@@ -71,10 +70,11 @@ def get_cards(
     *,
     owner: db.Owner,
     states: States,
-    path: db.DbPath = CARDS_DB,
+    path: db.DbPath = DB_NAME,
 ) -> GetCards:
     """Get cards."""
-    stmt = sqlalchemy.select(db.Cards.id, db.Cards.state, db.Cards.owner, db.Cards.summary)
+    # stmt = sqlalchemy.select(db.Cards.id, db.Cards.state, db.Cards.owner, db.Cards.summary)
+    stmt = sqlalchemy.select(*[getattr(db.Cards, c) for c in DB_COLUMNS])
     if owner is not None:
         stmt = stmt.where(db.Cards.owner == owner)
     if states:
@@ -82,7 +82,7 @@ def get_cards(
     return _dql_execute(path=path, stmt=stmt)
 
 
-def delete_card(*, card_id: db.Id, path: db.DbPath = CARDS_DB) -> None:
+def delete_card(*, card_id: db.Id, path: db.DbPath = DB_NAME) -> None:
     """Delete card."""
     stmt = sqlalchemy.delete(db.Cards).where(db.Cards.id == card_id)
     _dml_execute(path=path, stmt=stmt)
@@ -92,7 +92,7 @@ def update_card(
     *, card_id: db.Id,
     owner: db.Owner,
     summary: db.Summary | None,
-    path: db.DbPath = CARDS_DB,
+    path: db.DbPath = DB_NAME,
 ) -> None:
     """Update card."""
     stmt = sqlalchemy.update(db.Cards).where(db.Cards.id == card_id)
@@ -103,19 +103,19 @@ def update_card(
     _dml_execute(path=path, stmt=stmt)
 
 
-def start_card(*, card_id: db.Id, path: db.DbPath = CARDS_DB) -> None:
+def start_card(*, card_id: db.Id, path: db.DbPath = DB_NAME) -> None:
     """Start card."""
     stmt = sqlalchemy.update(db.Cards).where(db.Cards.id == card_id).values(state="wip")
     _dml_execute(path=path, stmt=stmt)
 
 
-def end_card(*, card_id: db.Id, path: db.DbPath = CARDS_DB) -> None:
+def end_card(*, card_id: db.Id, path: db.DbPath = DB_NAME) -> None:
     """Start card."""
     stmt = sqlalchemy.update(db.Cards).where(db.Cards.id == card_id).values(state="done")
     _dml_execute(path=path, stmt=stmt)
 
 
-def get_count(path: db.DbPath = CARDS_DB) -> GetCount:
+def get_count(path: db.DbPath = DB_NAME) -> GetCount:
     """Get count of cards."""
     case_order = {s: n for n, s in enumerate(typing.get_args(db.State))}
     stmt = sqlalchemy.select(db.Cards.state, sqlalchemy.func.count(db.Cards.state))
@@ -124,7 +124,7 @@ def get_count(path: db.DbPath = CARDS_DB) -> GetCount:
     return _dql_execute(path=path, stmt=stmt)
 
 
-def get_url(path: db.DbPath = CARDS_DB) -> Url:
+def get_url(path: db.DbPath = DB_NAME) -> Url:
     """Get DB URL."""
     with db.CardsDb(path=path) as cards_db:
         return str(cards_db.engine.url)
