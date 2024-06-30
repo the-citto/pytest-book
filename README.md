@@ -14,6 +14,11 @@ simplyfied to the bone
 
 likely further refactoring will be required to adapt the app structure to test - which is the point of this exercise
 
+## ch03-2
+most of db setup set in fixtures
+
+## ch03-3
+refactored to use fixtures db setp only
 
 
 
